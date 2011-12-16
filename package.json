@@ -1,0 +1,18 @@
+{
+  "author": "Michael Bridgen <mikeb@squaremobius.net>",
+  "name": "spb",
+  "description": "Size-Prefixed Blob for encoding messages on byte streams",
+  "version": "0.0.0",
+  "repository": {
+    "url": ""
+  },
+  "main": "./lib/spb.js",
+  "engines": {
+    "node": "~v0.4.12"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha -u tdd"
+  },
+  "dependencies": {},
+  "devDependencies": {"mocha": "*"}
+}
