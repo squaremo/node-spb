@@ -138,3 +138,19 @@ suite("Pause, resume", function() {
              assert.ok(drainFired);
          });
 });
+
+suite("Server", function() {
+    test("relays listen event", function(done) {
+        var net = require('net');
+        var port = 56789;
+        var server = net.createServer();
+        var bound = false;
+        server.on('close', function() {
+            assert.ok(bound);
+            done();
+        });
+        var blobserver = spb.v32server(server);
+        server.on('listening', function() { bound = true; server.close();});
+        server.listen(port);
+    });
+});
