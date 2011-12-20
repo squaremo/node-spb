@@ -77,7 +77,7 @@ suite("Read size", function() {
     s([255, 255, 255, 255], Math.pow(2, 32) - 1);
 });
 
-suite("Parsing of stream", function() {
+suite("Parsing", function() {
     parts([], []);
     parts([0], [""]);
     parts([1, 65], ["A"]);
@@ -105,52 +105,109 @@ function encoded(encoding, bytes, expected) {
                 });
 }
 
-suite("setEncoding results in suitably encoded strings", function() {
-    encoded("ascii", [0x66, 0x6f, 0x6f, 0x62, 0x61, 0x72], "foobar");
-    // FIXME is this testing anything?
-    encoded("utf8", [0xc2, 0xbd, 0x20, 0x2b, 0x20,
-                     0xc2, 0xbc, 0x20, 0x3d, 0x20, 0xc2, 0xbe],
-            "\u00bd + \u00bc = \u00be");
-    encoded("base64", [0xc2, 0xbd, 0x20, 0x2b, 0x20,
-                       0xc2, 0xbc, 0x20, 0x3d, 0x20, 0xc2, 0xbe],
-            "wr0gKyDCvCA9IMK+");
-});
+function write(name, indata) {
+    return test(name, function() {
+        var out = new TestStream();
+        var outbuf = null;
+        out.on('data', function(data) { outbuf = data; });
+        var s = spb.v32stream(out);
+        s.write(new Buffer(indata));
+        assert.ok(outbuf);
+        // NB use ascii only
+        if (indata.length < 128) {
+            assert.equal(indata.length, outbuf[0]);
+            assert.equal(indata, outbuf.slice(1).toString());
+        }
+        else {
+            assert.equal(indata.length, spb.readsize(outbuf));
+            assert.equal(indata.toString(), outbuf.slice(4).toString());
+        }
+    });
+}
 
-suite("Pause, resume", function() {
-    test("Pause a stream and get no results until resumed",
-         function() {
-             var input = new TestStream();
-             var out = [];
-             var s = spb.v32stream(input);
-             s.on('data', function(data) { out.push(data.toString()); });
-             s.resume();
-             assert.deepEqual([], out);
-             input.write(new Buffer([6]));
-             input.write(new Buffer("foobar"));
-             input.write(new Buffer([3]));
-             s.pause();
-             input.write(new Buffer("baz"));
-             assert.deepEqual(["foobar"], out);
-             var drainFired = false;
-             s.on('drain', function() { drainFired = true; });
-             s.resume();
-             assert.deepEqual(["foobar", "baz"], out);
-             assert.ok(drainFired);
-         });
+suite("Stream", function() {
+
+    suite("#setEncoding", function() {
+        encoded("ascii", [0x66, 0x6f, 0x6f, 0x62, 0x61, 0x72], "foobar");
+        // FIXME is this testing anything?
+        encoded("utf8", [0xc2, 0xbd, 0x20, 0x2b, 0x20,
+                         0xc2, 0xbc, 0x20, 0x3d, 0x20, 0xc2, 0xbe],
+            "\u00bd + \u00bc = \u00be");
+        encoded("base64", [0xc2, 0xbd, 0x20, 0x2b, 0x20,
+                           0xc2, 0xbc, 0x20, 0x3d, 0x20, 0xc2, 0xbe],
+                "wr0gKyDCvCA9IMK+");
+    });
+
+    suite("#write", function() {
+        write("zero message", "");
+        write("short data", "foobar");
+        var small = new Buffer(128);
+        small.fill('b');
+        write("data on cusp of long", small);
+        var longer = new Buffer(1024);
+        longer.fill('a');
+        write("longer data", longer);
+        // just enough to touch the most significant byte in the
+        // length
+        var longest = new Buffer(Math.pow(2, 25) - 1);
+        longest.fill('g');
+        write("longest data", longest);
+    });
+
+    suite("#pause", function() {
+        test("stops output until resume called",
+             function() {
+                 var input = new TestStream();
+                 var out = [];
+                 var s = spb.v32stream(input);
+                 s.on('data', function(data) { out.push(data.toString()); });
+                 s.resume();
+                 assert.deepEqual([], out);
+                 input.write(new Buffer([6]));
+                 input.write(new Buffer("foobar"));
+                 input.write(new Buffer([3]));
+                 s.pause();
+                 input.write(new Buffer("baz"));
+                 assert.deepEqual(["foobar"], out);
+                 var drainFired = false;
+                 s.on('drain', function() { drainFired = true; });
+                 s.resume();
+                 assert.deepEqual(["foobar", "baz"], out);
+                 assert.ok(drainFired);
+             });
+    });
 });
 
 suite("Server", function() {
-    test("relays listen event", function(done) {
-        var net = require('net');
-        var port = 56789;
+    var net = require('net');
+    var port = 56789;
+
+    test("relays listen and close event", function(done) {
         var server = net.createServer();
         var bound = false;
-        server.on('close', function() {
-            assert.ok(bound);
-            done();
-        });
         var blobserver = spb.v32server(server);
-        server.on('listening', function() { bound = true; server.close();});
+        blobserver.on('listening', function() { bound = true; server.close();});
+        // NB a failure here entails the test case timing out
+        blobserver.on('close', function() { done(); });
         server.listen(port);
+    });
+
+    test("wraps connections", function() {
+        var server = net.createServer();
+        var blobserver = spb.v32server(server);
+        blobserver.on('connection', function(stream) {
+            stream.on('data', function(data) {
+                assert.equal("foobar", data);
+                blobserver.close();
+                done();
+            });
+        });
+        server.listen(port);
+        var sock = net.connect(port);
+        sock.on('connect', function() {
+            sock.write(new Buffer([6]));
+            sock.write(new Buffer("foobar"));
+            sock.end();
+        });
     });
 });
