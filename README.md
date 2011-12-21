@@ -57,3 +57,11 @@ must emit the `'listening'`, `'close'` and `'connection'` events, and
 have a `close` method. It is safe to invoke methods and to supply
 callbacks for the above events on the underlying server; only
 `'connection'` is not equivalent.
+
+## A note on pipes
+
+Piping a spb stream to a byte stream will simply strip out size
+prefixes, effectively concatenating the messages into undelimited
+bytes. Piping a byte stream to a spb stream will encode as discrete
+messages the (probably arbitrarily delimited) packets read on the byte
+stream.
