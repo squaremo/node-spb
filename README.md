@@ -8,10 +8,10 @@ just want to deal with whole things (e.g., JSON objects) at a time.
 
 You can wrap streams (e.g., `net.Socket`) or things that look like
 `net.Server`. If you wrap a stream, then it treats incoming data as
-size-prefix encoded and hand you each message as a `'data'` event; and
-if you write a string or buffer, it treats it as a message and encode
-it with a size prefix. If you wrap a server, it provides wrapped
-streams in the `'connection'` event.
+size-prefix encoded and hands you each message (without the size
+prefix) as a `'data'` event; if you write a string or buffer, it
+treats it as a message and encode it with a size prefix. If you wrap a
+server, it provides wrapped streams in the `'connection'` event.
 
 ## Trivial example
 
@@ -26,7 +26,7 @@ streams in the `'connection'` event.
 
 ## Reference
 
-### `spb.stream(underlying)`
+### **`spb.stream(underlying)`**
 
 Wraps a [Stream](http://nodejs.org/docs/latest/api/streams.html).
 
@@ -48,7 +48,7 @@ size prefixing. `setEncoding` on the wrapped stream does the 'right
 thing', in other words, it results in the messages emitted being
 strings.
 
-### `spb.server(underlying)`
+### **`spb.server(underlying)`**
 
 Wraps a server, providing connections that are wrapped streams.
 
