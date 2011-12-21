@@ -8,7 +8,7 @@
   },
   "main": "./lib/spb.js",
   "engines": {
-    "node": ">v4"
+    "node": ">v0.4"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha -u tdd"
