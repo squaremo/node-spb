@@ -39,15 +39,18 @@ function parts(input, expected) {
 function TestStream() {
     this._paused = false;
     this._buffer = [];
+    this.readable = this.writable = true;
 }
 (function(proto) {
     TestStream.prototype = proto;
     proto.write = function(data) {
         if (this._paused) {
             this._buffer.push(data);
+            return false;
         }
         else {
             this.emit('data', data);
+            return true;
         }
     };
     proto.pause = function() {
@@ -192,7 +195,7 @@ suite("Server", function() {
         server.listen(port);
     });
 
-    test("wraps connections", function() {
+    test("wraps connections", function(done) {
         var server = net.createServer();
         var blobserver = spb.server(server);
         blobserver.on('connection', function(stream) {
@@ -210,4 +213,32 @@ suite("Server", function() {
             sock.end();
         });
     });
+});
+
+function prod(data, input, output) {
+    var out = [];
+    output.on('data', function(msg) { out.push(msg.toString()); });
+    data.forEach(function(m) { input.write(new Buffer(m)); });
+    return out;
+}
+
+suite("End to end", function() {
+    var data = ['here', 'are', 'some', 'messages'];
+
+    test("stream to stream", function() {
+        var under = new TestStream();
+        var input = spb.stream(under);
+        var output = spb.stream(under);
+        assert.deepEqual(data, prod(data, input, output));
+    });
+
+    test("pipe", function() {
+        var under1 = new TestStream();
+        var input = spb.stream(under1);
+        var under2 = new TestStream();
+        var output = spb.stream(under2);
+        under1.pipe(under2);
+        assert.deepEqual(data, prod(data, input, output));
+    });
+
 });

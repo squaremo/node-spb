@@ -1,10 +1,10 @@
 {
   "author": "Michael Bridgen <mikeb@squaremobius.net>",
   "name": "spb",
-  "description": "Size-Prefixed Blob for encoding messages on byte streams",
+  "description": "Size-prefixed blobs for encoding messages in byte streams",
   "version": "0.0.1",
   "repository": {
-    "url": ""
+    "url": "https://github.com/squaremo/node-spb.git"
   },
   "main": "./lib/spb.js",
   "engines": {
