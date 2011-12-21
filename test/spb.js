@@ -62,7 +62,7 @@ function TestStream() {
     };
 })(new (require('stream').Stream)());
 
-suite("Read size", function() {
+suite("#readsize", function() {
     function s(bytes, expected) {
         return test(bytes.toString() + " -> " + expected,
                     function() {
@@ -77,7 +77,7 @@ suite("Read size", function() {
     s([255, 255, 255, 255], Math.pow(2, 32) - 1);
 });
 
-suite("Parsing", function() {
+suite("parsing", function() {
     parts([], []);
     parts([0], [""]);
     parts([1, 65], ["A"]);
@@ -182,7 +182,7 @@ suite("Server", function() {
     var net = require('net');
     var port = 56789;
 
-    test("relays listen and close event", function(done) {
+    test("relays listen and close events", function(done) {
         var server = net.createServer();
         var bound = false;
         var blobserver = spb.v32server(server);
