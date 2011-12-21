@@ -19,7 +19,7 @@ function partitions(arr) {
 function part(inputs, expected) {
     var outputs = [];
     var instream = new (require('events').EventEmitter)();
-    var outstream = spb.v32stream(instream);
+    var outstream = spb.stream(instream);
     outstream.on('data', function(d) {outputs.push(d.toString());});
     for (var i = 0; i < inputs.length; i++) {
         instream.emit('data', new Buffer(inputs[i]));
@@ -93,7 +93,7 @@ function encoded(encoding, bytes, expected) {
     return test(expected + '(' + encoding + ')',
                 function() {
                     var ee = new (require('events').EventEmitter)();
-                    var s = spb.v32stream(ee);
+                    var s = spb.stream(ee);
                     s.setEncoding(encoding);
                     var out = null;
                     s.on('data', function(d) { out = d; });
@@ -110,7 +110,7 @@ function write(name, indata) {
         var out = new TestStream();
         var outbuf = null;
         out.on('data', function(data) { outbuf = data; });
-        var s = spb.v32stream(out);
+        var s = spb.stream(out);
         s.write(new Buffer(indata));
         assert.ok(outbuf);
         // NB use ascii only
@@ -159,7 +159,7 @@ suite("Stream", function() {
              function() {
                  var input = new TestStream();
                  var out = [];
-                 var s = spb.v32stream(input);
+                 var s = spb.stream(input);
                  s.on('data', function(data) { out.push(data.toString()); });
                  s.resume();
                  assert.deepEqual([], out);
@@ -185,7 +185,7 @@ suite("Server", function() {
     test("relays listen and close events", function(done) {
         var server = net.createServer();
         var bound = false;
-        var blobserver = spb.v32server(server);
+        var blobserver = spb.server(server);
         blobserver.on('listening', function() { bound = true; server.close();});
         // NB a failure here entails the test case timing out
         blobserver.on('close', function() { done(); });
@@ -194,7 +194,7 @@ suite("Server", function() {
 
     test("wraps connections", function() {
         var server = net.createServer();
-        var blobserver = spb.v32server(server);
+        var blobserver = spb.server(server);
         blobserver.on('connection', function(stream) {
             stream.on('data', function(data) {
                 assert.equal("foobar", data);
