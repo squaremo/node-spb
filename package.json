@@ -6,9 +6,10 @@
   "repository": {
     "url": "https://github.com/squaremo/node-spb.git"
   },
+  "bugs": "https://github.com/squaremo/node-spb/issues",
   "main": "./lib/spb.js",
   "engines": {
-    "node": ">v0.4"
+    "node": ">v0.6"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha -u tdd"
